@@ -27,6 +27,18 @@ function ensureImplement(checkClass, interfaceClass) {
     }
 }
 
+/**extend扩展类 */
+function extend(subClass, superClass) {
+    var F = function () {};
+    F.prototype = superClass.prototype;
+    subClass.prototype = new F;
+    subClass.superclass = superClass.prototype;
+    subClass.prototype.constructor = subClass;
+    if (superClass.prototype === Object) {
+        superClass.prototype.constructor = superClass;
+    }
+}
+
 
 /**XHR工厂 */
 
@@ -41,7 +53,7 @@ SimpleHandle.prototype = {
             if (xhr.readyState == 4) {
                 if (xhr.status == 200) {
                     callback.success(xhr.responseText, xhr.responseXML);
-                }else{
+                } else {
                     callback.failure(xhr.status);
                 }
             }
@@ -76,20 +88,109 @@ SimpleHandle.prototype = {
             this.createXhrObject = xhrAll[i];
             return xhrAll[i]();
         }
-        
-        
+
+
     }
 }
 
-var simpleXhr = new SimpleHandle();
-ensureImplement(simpleXhr, ajaxHandle);
+// simpleXhr.request('get', '1.txt', callback)
 
-var callback = {
-    success: function (i) {
-        console.log(i);
+/**作为工厂的子类 - 离线类 */
+var OfflineHandler = function () {
+    this.storedRequest = [];
+};
+extend(OfflineHandler, SimpleHandle);
+OfflineHandler.prototype = {
+    request: function (method, url, callback, postVal) {
+        if (XhrManager.isOffline()) {
+            this.storedRequest.push({
+                method: method,
+                url: url,
+                callback: callback,
+                postVal: postVal
+            })
+        } else {
+            this.flushStoredRequest();
+            this.superclass.request(method, url, callback, postVal);
+        };
     },
-    failure: function (i) {
-        console.log(i);
+    flushStoredRequest: function () {
+        for (var i = 0; i < this.storedRequest.length; i++) {
+            var req = this.storedRequest[i];
+            this.superclass.request(req.method, req.url, req.callback, req.postVal);
+        }
     }
 }
-simpleXhr.request('get','1.txt',callback)
+
+/**作为工厂模式的子类-高延迟类 */
+var QueuedHandler = function () {
+    this.queue = [];
+    this.requestInProgress = false;
+    this.retryDelay = 5;
+};
+extend(QueuedHandler, SimpleHandle);
+
+QueuedHandler.prototype = {
+    request: function (method, url, callback, postVal, override) {
+        if (this.requestInProgress && !override) {
+            this.queue.push({
+                method: method,
+                url: url,
+                callback: callback,
+                postVal: postVal
+            })
+        } else {
+            this.requestInProgress = true;
+            var xhr = this.createXhrObject();
+            var that = this;
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState !== 4) return;
+                if (xhr.status == 200) {
+                    callback.success(xhr.responseText, xhr.responseXML);
+                    that.advanceQueue()
+                } else {
+                    callback.failure(xhr.status);
+                    setTimeout(function () {
+                        that.request(method, url, callback, postVal);
+                    }, that.retryDelay * 1000)
+                }
+            };
+            xhr.open(method, url, callback, postVal);
+            if (method !== 'POST') postVal = null;
+            xhr.send(postVal);
+        }
+    },
+    advanceQueue: function () {
+        if (this.queue.length === 0) {
+            this.requestInProgress = false;
+            return;
+        }
+        var req = this.queue.shift();
+        this.request(req.method, req.url, req.callback, req.postVal);
+    }
+
+}
+
+
+var XhrManager = {
+    createXhrHandler: function () {
+        var xhr;
+        if (this.isOffline()) {
+            xhr = new OfflineHandler()
+        } else if (this.isHighLatency()) {
+            xhr = new QueuedHandler()
+        } else {
+            xhr = new SimpleHandle()
+        }
+
+        ensureImplement(xhr, ajaxHandle);
+
+        return xhr;
+    },
+    isOffline: function () {
+
+    },
+    isHighLatency: function () {
+
+    }
+}
