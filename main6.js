@@ -169,10 +169,13 @@ var XhrManager = {
     createXhrHandler: function () {
         var xhr;
         if (this.isOffline()) {
+            console.log('isOffline')
             xhr = new OfflineHandler()
         } else if (this.isHighLatency()) {
+            console.log('isHighLatency')
             xhr = new QueuedHandler()
         } else {
+            console.log('SimpleHandle')
             xhr = new SimpleHandle()
         }
 
@@ -198,12 +201,35 @@ var XhrManager = {
         return false;
     },
     isHighLatency: function () {
-        return false;
+        var xhr = SimpleHandle.prototype.createXhrObject();
+        var time = Date.now();
+
+        xhr.onreadystatechange = function () {
+/*             if (xhr.readyState === 0) {
+                console.log('对象已建立')
+            }
+            if (xhr.readyState === 1) {
+                console.log('调用open')
+            }
+            if (xhr.readyState === 2) {
+                console.log('调用send')
+            }
+            if (xhr.readyState === 3) {
+                console.log('请求发送')
+            } */
+            if (xhr.readyState === 4) {
+                time = Date.now() - time;
+                console.log(time);
+            }
+        }
+        xhr.open('get','1.txt',true);
+        xhr.send();
+        return time > 1000 ? true : false;
     }
 }
 
 var xhr = XhrManager.createXhrHandler();
-xhr.request('GET','1.txt',{
+xhr.request('GET','2.txt',{
     success:function (text) {
         console.log(text)
     },
