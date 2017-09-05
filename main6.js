@@ -31,10 +31,10 @@ function ensureImplement(checkClass, interfaceClass) {
 function extend(subClass, superClass) {
     var F = function () {};
     F.prototype = superClass.prototype;
-    subClass.prototype = new F;
+    subClass.prototype = new F();
     subClass.superclass = superClass.prototype;
     subClass.prototype.constructor = subClass;
-    if (superClass.prototype === Object) {
+    if (superClass.prototype.constructor === Object.prototype.constructor) {
         superClass.prototype.constructor = superClass;
     }
 }
@@ -42,13 +42,12 @@ function extend(subClass, superClass) {
 
 /**XHR工厂 */
 
-var ajaxHandle = new Interface('ajaxHander', ['request', 'createXhrObject']);
+var ajaxHandle = new Interface('ajaxHander', ['request']);
 
 var SimpleHandle = function () {};
 SimpleHandle.prototype = {
     request: function (method, url, callback, postVal) {
         var xhr = this.createXhrObject();
-        // var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function () {
             if (xhr.readyState == 4) {
                 if (xhr.status == 200) {
@@ -85,7 +84,7 @@ SimpleHandle.prototype = {
             } catch (e) {
                 continue;
             }
-            this.createXhrObject = xhrAll[i];
+            SimpleHandle.prototype.createXhrObject = xhrAll[i];
             return xhrAll[i]();
         }
 
@@ -93,32 +92,28 @@ SimpleHandle.prototype = {
     }
 }
 
-// simpleXhr.request('get', '1.txt', callback)
-
 /**作为工厂的子类 - 离线类 */
 var OfflineHandler = function () {
     this.storedRequest = [];
 };
 extend(OfflineHandler, SimpleHandle);
-OfflineHandler.prototype = {
-    request: function (method, url, callback, postVal) {
-        if (XhrManager.isOffline()) {
-            this.storedRequest.push({
-                method: method,
-                url: url,
-                callback: callback,
-                postVal: postVal
-            })
-        } else {
-            this.flushStoredRequest();
-            this.superclass.request(method, url, callback, postVal);
-        };
-    },
-    flushStoredRequest: function () {
-        for (var i = 0; i < this.storedRequest.length; i++) {
-            var req = this.storedRequest[i];
-            this.superclass.request(req.method, req.url, req.callback, req.postVal);
-        }
+OfflineHandler.prototype.request = function (method, url, callback, postVal) {
+    if (XhrManager.isOffline()) {
+        this.storedRequest.push({
+            method: method,
+            url: url,
+            callback: callback,
+            postVal: postVal
+        })
+    } else {
+        this.flushStoredRequest();
+        OfflineHandler.superclass.request(method, url, callback, postVal);
+    };
+}
+OfflineHandler.prototype.flushStoredRequest = function () {
+    for (var i = 0; i < this.storedRequest.length; i++) {
+        var req = this.storedRequest[i];
+        OfflineHandler.superclass.request(req.method, req.url, req.callback, req.postVal);
     }
 }
 
@@ -130,48 +125,46 @@ var QueuedHandler = function () {
 };
 extend(QueuedHandler, SimpleHandle);
 
-QueuedHandler.prototype = {
-    request: function (method, url, callback, postVal, override) {
-        if (this.requestInProgress && !override) {
-            this.queue.push({
-                method: method,
-                url: url,
-                callback: callback,
-                postVal: postVal
-            })
-        } else {
-            this.requestInProgress = true;
-            var xhr = this.createXhrObject();
-            var that = this;
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState !== 4) return;
-                if (xhr.status == 200) {
-                    callback.success(xhr.responseText, xhr.responseXML);
-                    that.advanceQueue()
-                } else {
-                    callback.failure(xhr.status);
-                    setTimeout(function () {
-                        that.request(method, url, callback, postVal);
-                    }, that.retryDelay * 1000)
-                }
-            };
-            xhr.open(method, url, callback, postVal);
-            if (method !== 'POST') postVal = null;
-            xhr.send(postVal);
-        }
-    },
-    advanceQueue: function () {
-        if (this.queue.length === 0) {
-            this.requestInProgress = false;
-            return;
-        }
-        var req = this.queue.shift();
-        this.request(req.method, req.url, req.callback, req.postVal);
+QueuedHandler.prototype.request = function (method, url, callback, postVal, override) {
+    if (this.requestInProgress && !override) {
+        this.queue.push({
+            method: method,
+            url: url,
+            callback: callback,
+            postVal: postVal
+        })
+    } else {
+        this.requestInProgress = true;
+        var xhr = this.createXhrObject();
+        var that = this;
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) return;
+            if (xhr.status == 200) {
+                callback.success(xhr.responseText, xhr.responseXML);
+                that.advanceQueue()
+            } else {
+                callback.failure(xhr.status);
+                setTimeout(function () {
+                    that.request(method, url, callback, postVal);
+                }, that.retryDelay * 1000)
+            }
+        };
+        xhr.open(method, url, callback, postVal);
+        if (method !== 'POST') postVal = null;
+        xhr.send(postVal);
     }
-
 }
 
+QueuedHandler.prototype.advanceQueue = function () {
+    if (this.queue.length === 0) {
+        this.requestInProgress = false;
+        return;
+    }
+    var req = this.queue.shift();
+    this.request(req.method, req.url, req.callback, req.postVal);
+}
 
+//负责生成最终类
 var XhrManager = {
     createXhrHandler: function () {
         var xhr;
@@ -188,9 +181,34 @@ var XhrManager = {
         return xhr;
     },
     isOffline: function () {
-
+        var online = true;
+        /* var xhr = SimpleHandle.prototype.createXhrObject();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) {
+                return;
+            }
+            if (xhr.status === 400) {
+                console.log('离线')
+                online = false;
+            }
+        }
+        xhr.open('get','1.txt',true);
+        xhr.send();
+        return online; */
+        return false;
     },
     isHighLatency: function () {
-
+        return false;
     }
 }
+
+var xhr = XhrManager.createXhrHandler();
+xhr.request('GET','1.txt',{
+    success:function (text) {
+        console.log(text)
+    },
+    failure:function (e) {
+        console.log(e)
+    }    
+})
+
