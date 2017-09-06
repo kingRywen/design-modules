@@ -184,47 +184,34 @@ var XhrManager = {
         return xhr;
     },
     isOffline: function () {
-        var online = true;
-        /* var xhr = SimpleHandle.prototype.createXhrObject();
+        var xhr = SimpleHandle.prototype.createXhrObject();
+        var time = Date.now();
+        var status;
+
         xhr.onreadystatechange = function () {
-            if (xhr.readyState !== 4) {
-                return;
-            }
-            if (xhr.status === 400) {
-                console.log('离线')
-                online = false;
-            }
+            if (xhr.readyState !== 4) return;
+            return (xhr.status >=200 && xhr.status <300) ? false : true;
         }
-        xhr.open('get','1.txt',true);
+        xhr.open('get','1.txt',false);
         xhr.send();
-        return online; */
-        return false;
     },
     isHighLatency: function () {
         var xhr = SimpleHandle.prototype.createXhrObject();
         var time = Date.now();
+        var status;
 
         xhr.onreadystatechange = function () {
-/*             if (xhr.readyState === 0) {
-                console.log('对象已建立')
-            }
-            if (xhr.readyState === 1) {
-                console.log('调用open')
-            }
-            if (xhr.readyState === 2) {
-                console.log('调用send')
-            }
-            if (xhr.readyState === 3) {
-                console.log('请求发送')
-            } */
             if (xhr.readyState === 4) {
                 time = Date.now() - time;
+                status = time < 200 ? false : true;
                 console.log(time);
             }
         }
-        xhr.open('get','1.txt',true);
+
+        xhr.open('get','1.txt',false);
         xhr.send();
-        return time > 1000 ? true : false;
+        return status;
+        
     }
 }
 
