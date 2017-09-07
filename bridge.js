@@ -162,7 +162,6 @@ DED.Queue.method('flush', function () {
             that.currentRetry = 0;
             that.queue.shift();
             that.onFlush.fire(o.responseText);
-            console.log(that.onFlush);
             if (that.queue.length == 0) {
                 that.onComplete.fire();
                 return;
