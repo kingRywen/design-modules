@@ -1,12 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
 </head>
+
 <body>
+    <div id="doc">
+        <h1>Ajax</h1>
+        <div id="queue-items"></div>
+        <div id="add-stuff">
+            <h2>Add request queue</h2>
+            <ul id="adders">
+                <li><a href="#" id="action-1">Add '01' to queue</a></li>
+                <li><a href="#" id="action-2">Add '02' to queue</a></li>
+                <li><a href="#" id="action-3">Add '03' to queue</a></li>
+            </ul>
+        </div>
+        <h2>Other queue actions</h2>
+        <ul id="items">
+            <li><a href="#" id="Flush">Flush</a></li>
+            <li><a href="#" id="Dequeue">Dequeue</a></li>
+            <li><a href="#" id="Pause">Pause</a></li>
+            <li><a href="#" id="Clear">Clear</a></li>
+        </ul>
+        <div id="results-area">
+            <h2>Results: </h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
     <script src="/bridge.js"></script>
 </body>
+
 </html>

@@ -4,6 +4,25 @@ Function.prototype.method = function (name, fn) {
     return this;
 }
 
+/**id选择器 */
+var $ = function (id) {
+    if (typeof id !== 'string') {
+        throw new Error('not string.')
+    }
+    return document.getElementById(id);
+}
+
+
+/**eventlisten */
+var addEvent = function (el, type, handle) {
+    if (el.addEventListener) {
+        el.addEventListener(type, handle, false);
+    } else {
+        el.attachEvent('on' + type, handle);
+    }
+}
+
+
 /**
  * 发送请求函数
  */
@@ -161,7 +180,7 @@ DED.Queue.method('flush', function () {
             window.clearInterval(that.timer);
             that.currentRetry = 0;
             that.queue.shift();
-            that.onFlush.fire(o.responseText);
+            that.onFlush.fire(o);
             if (that.queue.length == 0) {
                 that.onComplete.fire();
                 return;
@@ -190,16 +209,75 @@ DED.Queue.method('flush', function () {
         this.queue = [];
     });
 
-var de = new DED.Queue();
 
-de.add({
-    method:'GET',
-    url:'2.txt'
+
+/**实现dom */
+var ded = new DED.Queue();
+var requests = [];
+var results = $('results');
+var queue = $('queue-items');
+var items = $('items');
+
+ded.onFlush.subscribe(function (data) {
+    console.log(data);
+    results.innerHTML = data;
+    requests.shift();
+    queue.innerHTML = requests.toString();
+});
+
+ded.onFailure.subscribe(function () {
+    results.innerHTML += '<span style="color:red">Connect error</span>';
 })
 
-de.add({
-    method:'GET',
-    url:'1.txt'
+ded.onComplete.subscribe(function () {
+    results.innerHTML += '<span style="color:green">complete</span>';
 })
 
-de.flush();
+var actionDispatcher = function (element) {
+    switch (element) {
+        case 'Flush':
+            ded.flush();
+            break;
+        case 'Dequeue':
+            ded.dequeue();
+            requests.pop();
+            queue.innerHTML = requests.toString();
+            break;
+        case 'Pause':
+            ded.pause();
+            break;
+        case 'Clear':
+            ded.clear();
+            requests = [];
+            queue.innerHTML = requests.toString();
+            break;
+    }
+}
+
+var addRequest = function (request) {
+    var data = request.split('-')[1];
+    ded.add({
+        method: 'GET',
+        url: data + '.txt',
+        params: null
+    });
+    requests.push(data);
+    queue.innerHTML = requests.toString();
+}
+
+addEvent(items, 'click', function (e) {
+    var e = e || window.event;
+    var src = e.target || e.srcElement;
+    actionDispatcher(src.id);
+})
+
+addEvent($('adders'), 'click', function (e) {
+    var e = e || window.event;
+    var src = e.target || e.srcElement;
+    try {
+        e.preventDefault();
+    } catch (e) {
+        e.returnValue = false;
+    }
+    addRequest(src.id);
+})
