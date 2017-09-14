@@ -30,7 +30,7 @@ BicycleDecorator.prototype = {
 }
 
 
-/**最终使用的继承子类 */
+/**装饰子类1 */
 var SubBicycle = function (bicycle) {
     SubBicycle.superclass.constructor.call(this, bicycle);
 }
@@ -38,11 +38,29 @@ var SubBicycle = function (bicycle) {
 extend(SubBicycle, BicycleDecorator);
 
 SubBicycle.prototype.getPrice = function () {
-    return this.bicycle.getPrice() + 20
+    return this.bicycle.getPrice() + 20;
 }
 
+/**装饰子类2 */
+var FrameColorDecorator = function (bicycle, color) {
+    FrameColorDecorator.superclass.constructor.call(this,bicycle);
+    this.color = color;
+}
+
+extend(FrameColorDecorator,BicycleDecorator);
+
+FrameColorDecorator.prototype.getPrice = function () {
+    return this.bicycle.getPrice() + 100;
+}
+
+
+/**生成组件 */
 var bicycle = new Bicycle();
 
+/**包装一次 */
 bicycle = new SubBicycle(bicycle);
+
+/**再包装一次 */
+// bicycle = new FrameColorDecorator(bicycle, 'red');
 
 console.log(bicycle.getPrice());
