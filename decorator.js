@@ -80,6 +80,11 @@ ListBuilder.prototype = {
             var element = document.createElement('li');
             list.appendChild(element);
         }
+    },
+    removeList: function () {
+        var childList = this.parentEl.childNodes[0];
+        var del = this.parentEl.removeChild(childList);
+        del = null;
     }
 }
 
@@ -116,7 +121,8 @@ Profile.prototype = {
     }
 }
 
-var list = new ListBuilder('box',2000);
+var list = new ListBuilder('box',200000);
 list = new Profile(list);
 
 console.log(list.buildList());
+console.log(list.removeList());
