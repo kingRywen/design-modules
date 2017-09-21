@@ -61,6 +61,62 @@ var bicycle = new Bicycle();
 bicycle = new SubBicycle(bicycle);
 
 /**再包装一次 */
-// bicycle = new FrameColorDecorator(bicycle, 'red');
+bicycle = new FrameColorDecorator(bicycle, 'red');
 
 console.log(bicycle.getPrice());
+
+
+/**用于测试的类 */
+var ListBuilder = function (parentEl, length) {
+    this.parentEl = $(parentEl);
+    this.length = length;
+}
+
+ListBuilder.prototype = {
+    buildList: function () {
+        var list = document.createElement('ul');
+        this.parentEl.appendChild(list);
+        for (var i = 0; i < this.length; i++) {
+            var element = document.createElement('li');
+            list.appendChild(element);
+        }
+    }
+}
+
+/**测试类装饰者 */
+var Profile = function (component) {
+    this.component = component;
+    this.timer = {};
+
+    var self = this;
+    for (var key in self.component) {
+        if (typeof self.component[key] !== 'function') {
+            continue;
+        }
+
+        (function (methodName) {
+            self[methodName] = function () {
+                self.getStartTime(methodName);
+                var returnValue = self.component[methodName].apply(self.component, arguments);
+                self.showProgressTime(methodName);
+                return returnValue;
+            }
+        })(key);
+    }
+}
+
+
+Profile.prototype = {
+    getStartTime: function (methodName) {
+        this.timer[methodName] = new Date().getTime();
+    },
+    showProgressTime: function (methodName) {
+        this.timer[methodName] = new Date().getTime() - this.timer[methodName];
+        console.log(methodName + ' :用时' + this.timer[methodName] + 'ms.');
+    }
+}
+
+var list = new ListBuilder('box',2000);
+list = new Profile(list);
+
+console.log(list.buildList());
