@@ -60,9 +60,7 @@ Interface.ensureImplement = function (checkElement) {
     }
 }
 
-/**
- * ID选择器
- */
+/** $函数 */
 window.$ = function (id) {
     return document.getElementById(id);
 }
