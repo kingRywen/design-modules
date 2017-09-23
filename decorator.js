@@ -64,3 +64,38 @@ bicycle = new SubBicycle(bicycle);
 // bicycle = new FrameColorDecorator(bicycle, 'red');
 
 console.log(bicycle.getPrice());
+
+/**性能测试装饰 */
+
+var ListBuilder = function (parentEl, length) {
+    this.parentEl = $(parentEl);
+    this.length = length;    
+}
+ListBuilder.prototype = {
+    buildList: function () {
+        var list = document.createElement('ul');
+        this.parentEl.appendChild(list);
+
+        for (var i = 0; i < this.length; i++) {
+            var element = document.createElement('li');
+            list.appendChild(element);
+        }
+    }
+}
+
+/**性能测试装饰者 */
+var SimpleProfiler = function (component) {
+    this.component = component;
+}
+
+SimpleProfiler.prototype.buildList = function () {
+    var startTime = new Date().getTime();
+    this.component.buildList();
+    console.log(new Date().getTime()-startTime);
+}
+
+var ol = new ListBuilder('box',200);
+ol = new SimpleProfiler(ol);
+ol.buildList();
+
+
