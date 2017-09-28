@@ -1,6 +1,21 @@
 /**CalendarItem interface */
 var CalendarItem = new Interface('CalendarItem', ['display']);
 
+/**享元单元 */
+var CalendarDay = function () {
+    
+}
+
+CalendarDay.prototype = {
+    display: function (day, element) {
+        var el = document.createElement('div');
+        el.innerHTML = day + 1;
+        element.appendChild(el);
+    }
+}
+
+var calendarDay = new CalendarDay();
+
 /**CalendarYear class */
 var CalendarYear = function (year, parent) {
     this.year = year;
@@ -39,7 +54,7 @@ var CalendarMouth = function (mouthNum, numDays, parent) {
 
     this.days = [];
     for (var i = 0; i < numDays; i++) {
-        this.days[i] = new CalendarDay(i, this.element);
+        this.days[i] = calendarDay;
 
     }
 }
@@ -48,25 +63,11 @@ CalendarMouth.prototype = {
     display: function () {
         this.element.style.display = 'block';
         for (var i = 0; i < this.days.length; i++) {
-            this.days[i].display();
+            this.days[i].display(i,this.element);
         }
     }
 }
 
-
-var CalendarDay = function (day, parent) {
-    this.day = day;
-    this.element = document.createElement('div');
-    this.element.innerHTML = this.day;
-    this.element.style.display = 'none';
-    parent.appendChild(this.element);
-}
-
-CalendarDay.prototype = {
-    display: function () {
-        this.element.style.display = 'block';
-    }
-}
 
 var year = new CalendarYear(2000, 'date');
 

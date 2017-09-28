@@ -15,6 +15,20 @@ function extend(subClass, superClass) {
     }
 }
 
+/**
+ * 事件绑定
+ * @param {*dom} el 绑定事件的元素
+ * @param {*string} type 事件类型
+ * @param {*function} fn 回调函数
+ */
+function addEvent(el, type, fn) {
+    if (el.addEventListener) {
+        el.addEventListener(type, fn, false);
+    } else {
+        el.attachEvent('on' + type, fn)
+    }
+}
+
 
 /**
  * 接口类
@@ -43,7 +57,7 @@ function Interface(name, methods) {
  * 接口检测函数
  */
 Interface.ensureImplement = function (checkElement) {
-    if (arguments.length<2) {
+    if (arguments.length < 2) {
         throw new Error('参数必须多于两个');
     }
     for (var i = 1; i < arguments.length; i++) {
